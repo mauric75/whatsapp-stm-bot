@@ -1,44 +1,41 @@
 const axios = require('axios');
 
-let tokenCache = null;
-let tokenExpiracion = null;
+// Función para obtener el tipo de día actual (HABIL, SABADO, DOMINGO)
+function obtenerTipoDia() {
+  const hoy = new Date();
+  const dia = hoy.getDay();
+  
+  if (dia === 0) return 'DOMINGO';
+  if (dia === 6) return 'SABADO';
+  return 'HABIL';
+}
 
-async function obtenerToken() {
-  if (tokenCache && tokenExpiracion && tokenExpiracion > Date.now()) {
-    return tokenCache;
-  }
-
-  try {
-    const respuesta = await axios.post(
-      'https://mvdapi-auth.montevideo.gub.uy/auth/realms/pci/protocol/openid-connect/token',
-      'grant_type=client_credentials',
-      {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        auth: {
-          username: process.env.STM_CLIENT_ID,
-          password: process.env.STM_CLIENT_SECRET
-        }
-      }
-    );
-
-    tokenCache = respuesta.data.access_token;
-    tokenExpiracion = Date.now() + (respuesta.data.expires_in - 300) * 1000;
-    console.log('🔑 Token obtenido exitosamente');
-    return tokenCache;
-  } catch (error) {
-    console.error('❌ Error obteniendo token:', error.message);
-    throw new Error('No se pudo autenticar con la API de Montevideo');
-  }
+// Función para obtener la hora actual en formato HH:MM
+function obtenerHoraActual() {
+  const ahora = new Date();
+  const horas = String(ahora.getHours()).padStart(2, '0');
+  const minutos = String(ahora.getMinutes()).padStart(2, '0');
+  return `${horas}:${minutos}`;
 }
 
 async function obtenerProximosBuses(stopId) {
   try {
-    const token = await obtenerToken();
-    const respuesta = await axios.get(
-      `https://api.montevideo.gub.uy/transporteRest/buses/busstops/${stopId}/upcomingbuses`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return respuesta.data;
+    const tipoDia = obtenerTipoDia();
+    const horaActual = obtenerHoraActual();
+    
+    const url = `http://www.montevideo.gub.uy/transporteRest/pasadas/${stopId}/${tipoDia}/${horaActual}`;
+    
+    const respuesta = await axios.get(url);
+    
+    // Transformar la respuesta al formato esperado
+    const buses = respuesta.data.map(pasada => ({
+      linea: pasada.linea,
+      destino: pasada.destino,
+      horaDesc: pasada.horaDesc,
+      hora: pasada.hora
+    }));
+    
+    return buses;
   } catch (error) {
     console.error(`❌ Error consultando parada ${stopId}:`, error.message);
     throw new Error(`No se pudo consultar la parada ${stopId}`);

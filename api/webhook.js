@@ -9,8 +9,7 @@ function formatearRespuesta(stopId, nombreParada, buses) {
     return texto;
   }
   buses.slice(0, 5).forEach(b => {
-    const minutos = Math.floor(b.eta / 60);
-    texto += `🚌 *${b.linea}* → ${minutos} min\n`;
+    texto += `🚌 *${b.linea}* → ${b.horaDesc} (${b.destino})\n`;
   });
   return texto;
 }
@@ -39,8 +38,7 @@ module.exports = async (req, res) => {
             const buses = await obtenerProximosBuses(parada.id);
             if (buses && buses.length > 0) {
               buses.slice(0, 3).forEach(b => {
-                const min = Math.floor(b.eta / 60);
-                respuestaTexto += `   🚌 ${b.linea} → ${min} min\n`;
+                respuestaTexto += `   🚌 ${b.linea} → ${b.horaDesc}\n`;
               });
             } else {
               respuestaTexto += '   ⚠️ Sin buses próximos\n';
