@@ -1,0 +1,55 @@
+name: Actualizar paradas semanalmente
+
+on:
+  schedule:
+    # Cada lunes a las 3 AM UTC (medianoche en Montevideo)
+    - cron: '0 3 * * 1'
+  
+  # También permite ejecutar manualmente
+  workflow_dispatch:
+
+jobs:
+  actualizar-paradas:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Descargar paradas del CKAN
+        run: python scripts/descargar_paradas.py
+
+      - name: Verificar cambios
+        id: verify
+        run: |
+          if git diff --quiet data/stops.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit y push (si hay cambios)
+        if: steps.verify.outputs.changed == 'true'
+        run: |
+          git config user.name "Bot de Paradas STM"
+          git config user.email "bot@example.com"
+          git add data/stops.json
+          git commit -m "🔄 Actualizar paradas desde CKAN de Montevideo"
+          git push
+
+      - name: Crear pull request (si hay cambios)
+        if: steps.verify.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: '🔄 Actualizar paradas desde CKAN'
+          title: 'Actualización automática: Paradas del CKAN'
+          body: |
+            Este PR contiene la actualización automática de las paradas desde el CKAN de Montevideo.
+            
+            Si todo está correcto, mergueá este PR para aplicar los cambios a producción.
+          branch: paradas/actualizar-ckan
