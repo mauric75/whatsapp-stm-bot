@@ -10,7 +10,7 @@ async function obtenerToken() {
 
   try {
     const respuesta = await axios.post(
-      'https://api.montevideo.gub.uy/oauth2/token',
+      'https://mvdapi-auth.montevideo.gub.uy/auth/realms/pci/protocol/openid-connect/token',
       'grant_type=client_credentials',
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
