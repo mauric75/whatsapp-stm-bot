@@ -1,0 +1,12 @@
+[
+  {"id": "1192", "nombre": "19 de Junio y Eduardo Raíz", "lat": -34.9055, "lng": -56.1844, "lineas": ["526", "G", "148", "329"]},
+  {"id": "4190", "nombre": "18 de Julio y Convención", "lat": -34.9061, "lng": -56.1864, "lineas": ["3", "9", "30", "64", "121"]},
+  {"id": "1190", "nombre": "Río Branco y 18 de Julio", "lat": -34.9058, "lng": -56.1835, "lineas": ["526", "G", "148"]},
+  {"id": "1188", "nombre": "25 de Mayo y 18 de Julio", "lat": -34.9063, "lng": -56.1804, "lineas": ["526", "G", "148"]},
+  {"id": "1000", "nombre": "Plaza Independencia", "lat": -34.9064, "lng": -56.2001, "lineas": ["9", "64", "121", "3"]},
+  {"id": "2357", "nombre": "Bulevar Artigas y Av. Italia", "lat": -34.8932, "lng": -56.1589, "lineas": ["3", "30", "64"]},
+  {"id": "1194", "nombre": "Colonia y Río Branco", "lat": -34.9048, "lng": -56.1838, "lineas": ["526", "G"]},
+  {"id": "1196", "nombre": "Mercedes y Río Branco", "lat": -34.9045, "lng": -56.1840, "lineas": ["526", "G", "148"]},
+  {"id": "1001", "nombre": "Ciudadela", "lat": -34.9060, "lng": -56.1980, "lineas": ["3", "9", "30"]},
+  {"id": "2355", "nombre": "Av. Italia y Bulevar Artigas", "lat": -34.8930, "lng": -56.1592, "lineas": ["3", "30", "64", "121"]}
+]

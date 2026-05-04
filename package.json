@@ -1,0 +1,10 @@
+{
+  "name": "whatsapp-stm-bot",
+  "version": "1.0.0",
+  "main": "api/webhook.js",
+  "private": true,
+  "dependencies": {
+    "twilio": "^4.19.0",
+    "axios": "^1.6.0"
+  }
+}
