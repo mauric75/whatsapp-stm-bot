@@ -4,7 +4,9 @@
   "main": "api/webhook.js",
   "private": true,
   "dependencies": {
-    "twilio": "^4.19.0",
-    "axios": "^1.6.0"
+    "axios": "^1.16.0",
+    "cheerio": "^1.2.0",
+    "node-cache": "^5.1.2",
+    "twilio": "^4.19.0"
   }
 }

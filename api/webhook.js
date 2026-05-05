@@ -1,18 +1,6 @@
 const twilio = require('twilio');
-const { obtenerProximosBuses } = require('../services/montevideoApi');
 const { obtenerParadasCercanas } = require('../services/geo');
-
-function formatearRespuesta(stopId, nombreParada, buses) {
-  let texto = `🚏 Parada *${nombreParada || stopId}*\n\n`;
-  if (!buses || buses.length === 0) {
-    texto += '😕 No hay buses próximos en este momento.\n';
-    return texto;
-  }
-  buses.slice(0, 5).forEach(b => {
-    texto += `🚌 *${b.linea}* → ${b.horaDesc} (${b.destino})\n`;
-  });
-  return texto;
-}
+const { obtenerSTM, formatearSTM } = require("../services/stm");
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -26,47 +14,76 @@ module.exports = async (req, res) => {
   let respuestaTexto = '';
 
   try {
+    // 📍 UBICACIÓN
     if (latitud && longitud) {
       const paradasCercanas = obtenerParadasCercanas(parseFloat(latitud), parseFloat(longitud));
+
       if (paradasCercanas.length === 0) {
-        respuestaTexto = '📍 No encontré paradas cercanas a tu ubicación.\nProbá en otra zona.';
+        respuestaTexto = '📍 No encontré paradas cercanas a tu ubicación.';
       } else {
-        respuestaTexto = '📍 *Paradas más cercanas:*\n\n';
-        for (const parada of paradasCercanas) {
-          respuestaTexto += `🚏 *${parada.nombre}* (${parada.distancia.toFixed(2)} km)\n`;
-          try {
-            const buses = await obtenerProximosBuses(parada.id);
-            if (buses && buses.length > 0) {
-              buses.slice(0, 3).forEach(b => {
-                respuestaTexto += `   🚌 ${b.linea} → ${b.horaDesc}\n`;
-              });
-            } else {
-              respuestaTexto += '   ⚠️ Sin buses próximos\n';
-            }
-          } catch {
-            respuestaTexto += '   ❌ Error al consultar\n';
+        respuestaTexto = '📍 *Paradas cercanas:*\n\n';
+
+        for (const parada of paradasCercanas.slice(0, 3)) {
+          respuestaTexto += `🚏 *${parada.nombre}*\n`;
+
+          const data = await obtenerSTM(parada.id);
+
+          if (data.length) {
+            data.slice(0, 2).forEach(b => {
+              respuestaTexto += `   🚌 ${b.linea} → ${b.tiempo}\n`;
+            });
+          } else {
+            respuestaTexto += '   ⚠️ Sin buses\n';
           }
+
           respuestaTexto += '\n';
         }
       }
     }
-    else if (/^\d+$/.test(mensaje)) {
-      try {
-        const buses = await obtenerProximosBuses(mensaje);
-        respuestaTexto = formatearRespuesta(mensaje, `Parada ${mensaje}`, buses);
-      } catch {
-        respuestaTexto = '❌ No encontré esa parada. Verificá el número.\nEjemplo: 1192';
+
+    // 🔍 DETECTAR PARADA + LÍNEA
+    else {
+      const matchParada = mensaje.match(/\b\d{3,5}\b/);
+      const matchLinea = mensaje.match(/\b\d{2,3}\b/);
+
+      if (matchParada) {
+        const parada = matchParada[0];
+        const linea = (matchLinea && matchLinea[0] !== parada) ? matchLinea[0] : null;
+
+        const data = await obtenerSTM(parada);
+
+        respuestaTexto = formatearSTM(data, parada, linea);
+      }
+
+      // 🆘 AYUDA
+      else if (mensaje.toLowerCase() === 'ayuda') {
+        respuestaTexto =
+`🚌 *TransitMVD Bot*
+
+📍 Mandá:
+• Un número de parada → 4190
+• Parada + línea → 4190 103
+• Tu ubicación 📍
+
+⚡ Ejemplos:
+• 1192
+• 4190 103
+• ayuda`;
+      }
+
+      // 🤖 DEFAULT
+      else {
+        respuestaTexto =
+`🤖 *TransitMVD Bot*
+
+Mandame un número de parada o tu ubicación 📍
+Escribí *ayuda* para más info.`;
       }
     }
-    else if (mensaje.toLowerCase() === 'ayuda') {
-      respuestaTexto = '🚌 *¿Cuándo pasa el bondi?*\n\n📝 *Opciones:*\n• Mandá un número de parada (ej: 1192)\n• Compartí tu ubicación 📍\n\n💡 *Ejemplos de paradas:*\n• 1192 - 19 de Junio y E. Raíz\n• 4190 - 18 de Julio y Convención\n• 1000 - Plaza Independencia\n\n⚡ *Comandos:*\n• *ayuda* - Ver este mensaje';
-    }
-    else {
-      respuestaTexto = '🤖 *TransitMVD Bot*\n\nMandame un número de parada o compartí tu ubicación.\nEscribí *ayuda* para más info.';
-    }
+
   } catch (error) {
     console.error('Error:', error);
-    respuestaTexto = '❌ Ocurrió un error inesperado. Intentá de nuevo más tarde.';
+    respuestaTexto = '❌ Error al obtener datos. Probá de nuevo.';
   }
 
   const twiml = new twilio.twiml.MessagingResponse();
