@@ -36,53 +36,50 @@ function generarBusesSimulados(stopId) {
   const ahora = new Date();
   const horaActual = ahora.getHours() * 100 + ahora.getMinutes();
   
-  if (!datosParadas[stopId]) {
-    const buses = [];
-    let hora = horaActual;
-    for (let i = 0; i < 5; i++) {
-      hora += 8 + Math.random() * 5;
-      if (hora > 2359) hora = 600;
+  // Si tenemos datos de esa parada, usarlos
+  if (datosParadas[stopId]) {
+    const busesBase = datosParadas[stopId].buses;
+    return busesBase.map(b => {
+      let nuevoHora = b.hora;
+      if (nuevoHora <= horaActual) {
+        nuevoHora += 600;
+      }
+      if (nuevoHora > 2359) nuevoHora = nuevoHora - 2400;
       
-      const lineas = ['1', '2', '3', '5', '7', '10', '15', '21', '79'];
-      const destinos = ['Centro', 'Pocitos', 'Malvín', 'Tres Cruces', 'Géant', 'Portones', 'Belvedere'];
-      
-      buses.push({
-        linea: lineas[Math.floor(Math.random() * lineas.length)],
-        destino: destinos[Math.floor(Math.random() * destinos.length)],
-        hora: Math.floor(hora),
-        horaDesc: `${String(Math.floor(hora / 100)).padStart(2, '0')}:${String(hora % 100).padStart(2, '0')}`
-      });
-    }
-    return buses;
+      return {
+        ...b,
+        hora: nuevoHora,
+        horaDesc: `${String(Math.floor(nuevoHora / 100)).padStart(2, '0')}:${String(nuevoHora % 100).padStart(2, '0')}`
+      };
+    }).sort((a, b) => a.hora - b.hora);
   }
   
-  const busesBase = datosParadas[stopId].buses;
-  return busesBase.map(b => {
-    let nuevoHora = b.hora;
-    if (nuevoHora <= horaActual) {
-      nuevoHora += 600;
-    }
-    if (nuevoHora > 2359) nuevoHora = nuevoHora - 2400;
+  // Si no, generar datos aleatorios realistas
+  const buses = [];
+  let hora = horaActual;
+  for (let i = 0; i < 5; i++) {
+    hora += 8 + Math.random() * 5;
+    if (hora > 2359) hora = 600;
     
-    return {
-      ...b,
-      hora: nuevoHora,
-      horaDesc: `${String(Math.floor(nuevoHora / 100)).padStart(2, '0')}:${String(nuevoHora % 100).padStart(2, '0')}`
-    };
-  }).sort((a, b) => a.hora - b.hora);
+    const lineas = ['1', '2', '3', '5', '7', '10', '15', '21', '79'];
+    const destinos = ['Centro', 'Pocitos', 'Malvín', 'Tres Cruces', 'Géant', 'Portones', 'Belvedere'];
+    
+    buses.push({
+      linea: lineas[Math.floor(Math.random() * lineas.length)],
+      destino: destinos[Math.floor(Math.random() * destinos.length)],
+      hora: Math.floor(hora),
+      horaDesc: `${String(Math.floor(hora / 100)).padStart(2, '0')}:${String(hora % 100).padStart(2, '0')}`
+    });
+  }
+  return buses;
 }
 
 async function obtenerProximosBuses(stopId) {
   try {
     const buses = generarBusesSimulados(stopId);
-    
-    if (!buses || buses.length === 0) {
-      throw new Error(`No hay datos para la parada ${stopId}`);
-    }
-    
-    return buses;
+    return buses || [];
   } catch (error) {
-    console.error(`?? Usando datos simulados para parada ${stopId}`);
+    console.error(`Error: ${error.message}`);
     return [
       { linea: '79', destino: 'Géant', hora: 1918, horaDesc: '19:18' },
       { linea: '21', destino: 'Portones', hora: 1945, horaDesc: '19:45' },
